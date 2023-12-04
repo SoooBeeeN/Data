@@ -151,14 +151,132 @@ s_income <- welfare %>%
   filter(!is.na(income)) %>%
   group_by(ageg, sex) %>%
   summarise(mean_income = mean(income))
-
 s_income
 
 ggplot(data = s_income, aes(x=ageg, y=mean_income, fill=sex)) +
-  geom_col() + 
-  scale_x_discrete(limit = c('young', 'middle', 'old'))
+  geom_col() +
+  scale_x_discrete(limits = c('young', 'middle', 'old'))
 
 # 막대그래프 성별 나누기
 ggplot(data = s_income, aes(x=ageg, y=mean_income, fill=sex)) +
-  geom_col(position='dodge2') + 
-  scale_x_discrete(limit = c('young', 'middle', 'old'))
+  geom_col(position = 'dodge2') +
+  scale_x_discrete(limits = c('young', 'middle', 'old'))
+
+'나이 및 성별 월급 차이 분석 (선그래프)'
+
+# 성별 연령별 월급 평균표
+s_age <- welfare %>%
+  filter(!is.na(income)) %>%
+  group_by(age, sex) %>%
+  summarise(mean_income = mean(income))
+s_age
+
+ggplot(data = s_age, aes(x=age, y=mean_income, col=sex)) +
+  geom_line()
+
+'직업별 월급 차이 - 어떤 직업이 월급을 가장 많이 받는지'
+
+## 직업 변수 검토
+class(welfare$code_job)
+table(welfare$code_job)
+
+## 전처리
+library(readxl)
+list_job <- read_excel('Koweps_Codebook.xlsx', col_names = T, sheet=2)
+list_job
+
+welfare <- left_join(welfare, list_job, by='code_job')
+
+# 직업 월급 평균표 생성
+job_income <- welfare %>%
+  filter(!is.na(job) & !is.na(income)) %>%
+  group_by(job) %>%
+  summarise(mean_income = mean(income))
+
+# 월급이 높은 직업 top10
+top10 <- job_income %>%
+  arrange(desc(mean_income)) %>%
+  head(10)
+top10
+
+# 그래프 생성
+ggplot(data = top10, aes(x=reorder(job, mean_income), y=mean_income, fill=job)) + 
+  geom_col() +
+  coord_flip() #막대를 오른쪽으로 90도 회전
+
+# 월급이 낮은 직업10 추출
+bottom10 <- job_income %>%
+  arrange(mean_income) %>%
+  head(10)
+bottom10
+
+ggplot(data = bottom10, aes(x=reorder(job, -mean_income), y=mean_income)) + 
+  geom_col() +
+  coord_flip() +
+  ylim(0, 800)
+
+'성별 직업 빈도 - 성별로 어떤 직업이 가장 많은지'
+
+# 성별 직업 빈도표
+job_male <- welfare %>%
+  filter(!is.na(job) & sex==1) %>%
+  group_by(job) %>%
+  summarise(n = n()) %>%
+  arrange(desc(n)) %>%
+  head(10)
+job_male
+
+job_female <- welfare %>%
+  filter(!is.na(job) & sex==2) %>%
+  group_by(job) %>%
+  summarise(n=n()) %>%
+  arrange(desc(n)) %>%
+  head(10)
+job_female
+
+## 그래프 생성
+# 남성
+ggplot(data = job_male, aes(x=reorder(job, n), y=n)) +
+  geom_col() + 
+  coord_flip()
+# 여성
+ggplot(data = job_female, aes(x=reorder(job, n), y=n)) +
+  geom_col() +
+  coord_flip()
+
+
+'종교 유무에 따른 이혼율 분석'
+# 변수 검토
+table(welfare$marriage)
+table(welfare$religion)
+
+# 종교 유무에 이름 부여
+welfare$religion <- ifelse(welfare$religion == 1, 'yes', 'no')
+table(welfare$religion)
+
+# 파생변수 '이혼여부' 생성
+welfare$group_marriage <- ifelse(welfare$marriage == 1, 'marriage',
+                                 ifelse(welfare$marriage == 3, 'divorce',
+                                        NA))
+table(welfare$group_marriage)
+
+# 종교 유무에 따른 이혼율 분석
+religion_marriage <- welfare %>%
+  filter(!is.na(group_marriage)) %>%
+  group_by(religion, group_marriage) %>%
+  summarise(n = n()) %>%
+  mutate(total_group = sum(n)) %>%
+  mutate(pct = round(n/total_group*100,1))
+religion_marriage
+
+# 이혼만 추출
+divorce <- religion_marriage %>%
+  filter(group_marriage == 'divorce') %>%
+  select(religion, pct)
+divorce
+
+#---------------------------------------------------------
+
+'인터렉티브 그래프 : 마우스 움직임에 반응해서 실시간으로 형태가 변하는 그래프'
+'그래프를 HTML 포맷으로 저장하면 일반 사용자들도 웹 브라우저를 이용해서 자유롭게 조작하며 볼수 있음'
+

@@ -102,7 +102,7 @@ head(mpg)
 tail(mpg, 20)
 
 # 빈도표 생성 - table() 함수
-table(mpg$test)
+table(mpg$drv)
 library(ggplot2)
 qplot(mpg$test)
 
@@ -144,7 +144,7 @@ df_exam %>% filter(math < 50)
 2. | (또는, or) : 두 조건 중 하나라도 충족
 '
 
-df_exam %>% filter(class == 2 & english > 90)
+df_exam %>% filter(class == 2 & english > 90)     
 df_exam %>% filter(math >= 90 | english >= 90)
 df_exam %>% filter(class == 1 | class == 3 | class == 5)
 ' %in% : 포함 연산자 '
@@ -195,7 +195,7 @@ df_exam %>%
 
 ### 순서 정렬
 df_exam %>% arrange(math) # 오름차순
-df_exam %>% arrange(desc(math)) # 내림차순
+df_exam %>% arrange(desc(math)) # 내림차순 
 
 ### 파생변수 추가
 df_exam %>% 
@@ -237,6 +237,7 @@ df_exam %>%
             sum_math = sum(math), # 합계
             median_math = median(math), #중앙값
             stud = n()) # 학생 수
+df_exam
 ' 자주 사용하는 요약 통계량 함수
 1. mean() : 평균
 2. sd() : 표준 편차 (요소들의 퍼짐의 정도)
@@ -320,6 +321,7 @@ mean(df$score)
 행을 제거하는 경우는 데이터의 크기에 여유가 있을 때만 사용하자.
 '
 df %>% filter(!is.na(score)) # score 변수에 NA 인 데이터만 빼고 출력
+df
 
 # 여러 변수 동시에 결측치 없는 데이터를 추출
 df_nomiss <- df %>% filter(!is.na(score) & !is.na(s))
