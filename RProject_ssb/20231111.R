@@ -280,3 +280,141 @@ divorce
 '인터렉티브 그래프 : 마우스 움직임에 반응해서 실시간으로 형태가 변하는 그래프'
 '그래프를 HTML 포맷으로 저장하면 일반 사용자들도 웹 브라우저를 이용해서 자유롭게 조작하며 볼수 있음'
 
+install.packages('plotly')
+library(plotly)
+
+p <- ggplot(data = mpg, aes(x=displ, y=hwy, col=drv)) +
+  geom_point()
+ggplotly(p)
+
+### 인터렉티브 막대 그래프
+p <- ggplot(data = diamonds, aes(x=cut, fill=clarity)) +
+  geom_bar(position = 'dodge') 
+ggplotly(p)
+
+### dygraphs 패키지로 인터렉티브 시계열 그래프 생성
+install.packages('dygraphs')
+library('dygraphs')
+library(xts)
+
+head(economics)
+
+'해당 패키지로 시계열 그래프를 만들려면 데이터 시간 순서의
+속성을 지니는 xts 데이터 타입으로 변경을 해야한다.'
+'-> xts()'
+
+eco <- xts(economics$unemploy, order.by = economics$date)
+dygraph(eco)
+
+# 날짜 범위 선택 기능 추가
+dygraph(eco) %>% dyRangeSelector()
+
+# 여러 개 값 표시하기
+economics
+eco_a <- xts(economics$psavert, order.by = economics$date)
+eco_b <- xts(economics$unemploy/1000, order.by = economics$date)
+
+# cbind()를 사용해서 가로로 결합 후 변수명 수정
+eco2 <- cbind(eco_a, eco_b) # 데이터 결합
+colnames(eco2) <- c('psavert', 'unemploy')
+head(eco2)
+
+dygraph(eco2) %>% dyRangeSelector()
+
+
+#--------------------------------------------------------
+
+'지도 시각화'
+'단계 구분도 : 지열별 통계치를 색깔의 차이로 표현한 지도'
+
+### 패키지 로드
+install.packages('ggiraphExtra')
+library(ggiraphExtra)
+
+### 미국 주별 범죄 데이터 로드
+'USArrests Data : R 언어에 기본적으로 내장되어 있는 1970년도
+미국 주 별 강력 범죄율 정보를 담고 있는 데이터'
+str(USArrests)
+head(USArrests)
+
+'tibble 패키지 rownames_to_column()를 사용해서
+행 이름을 state변수로 바꿔서 새로운 데이터 프레임을 만들어준다.'
+
+'tolower() : 소문자 변환 함수'
+
+library(tibble)
+
+crime <- rownames_to_column(USArrests, var = 'state')
+crime$state <- tolower(crime$state)
+str(crime)
+
+### 미국 주 지도 데이터 로드
+'단계 구분도 만들려면 위도, 경도 정보가 있는 지도 데이터가 필요'
+
+'maps 패키지에 미국 주 별 위경도를 나타낸 state데이터가 있음'
+'-> 해당 데이터를 ggplot2의 map_data() 함수를 사용해 DF 형태로 가져옴'
+states_map <- map_data('state')
+str(states_map)
+
+### 단계 구분도 생성
+ggChoropleth(data = crime, #지도에 표현할 데이터
+             aes(fill=Murder, #색깔로 표현할 변수
+                  map_id=state), #지역 기준 변수
+             map = states_map) #지도 데이터
+
+### 인터렉티브 단계 구분도 생성
+ggChoropleth(data = crime,
+             aes(fill=Murder, map_id=state),
+             map = states_map,
+             interactive = T) #인터렉티브 여부
+
+'kormaps2014 패키미 : 대한민국의 지역 통계 데이터와 지도 데이터를 사용하게 해줌'
+install.packages('stringi')
+install.packages('devtools')
+devtools::install_github('cardiomoon/kormaps2014')
+library(kormaps2014)
+
+### 데이터 로드
+'korpop1 : 2015년 센서스 데이터(시도별)
+ korpop2 : 2015년 센서스 데이터(시구군별)
+ korpop3 : 2015년 센서스 데이터(읍면동별)'
+
+str(korpop1)
+
+# 변수명 수정
+library(dplyr)
+korpop1 <- rename(korpop1,
+                  pop = '총인구_명',
+                  name = '행정구역별_읍면동')
+
+# 대한민국 시도 지도 데이터 확인
+str(kormap1)
+
+### 단계 구분도 생성
+library(ggplot2)
+library(ggiraphExtra)
+library(tibble)
+ggChoropleth(data = korpop1, #지도에 표현할 데이터
+              aes(fill=pop, #색깔로 표현할 변수
+                  map_id=code, #지역 기준 변수
+                  tooltip=name), #지도 위에 표시할 지역명)
+             map = kormap1, #지도 데이터
+             interactive = T) #인터렉티브 여부
+
+### 시도별 결핵 환자 수 단계 구분도
+'tbc 데이터 : 지역별 결핵 환자 수 데이터
+  -> NewPts(결핵 환자수) 변수 사용'
+
+str(tbc)
+
+ggChoropleth(data = tbc,
+             aes(fill=NewPts,
+                 map_id=code,
+                 tooltips=name),
+             map = kormap1,
+             interactive = T)
+
+#-------------------------------------------------
+'텍스트 마이닝 : 문자로 된 데이터에서 가치 있는 정도를 얻어 내는 기법'
+
+'형태소 분석 : 문장을 구성하는 어절들이 어떤 품사로 되어 있는지 파악하는 작업'
